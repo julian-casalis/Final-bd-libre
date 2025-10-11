@@ -23,7 +23,8 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
 4. Luego la creacion de las tablas, la cual tiene datos del tipo integer y varchar, con las claves primarias y foraneas.
 
    ° Tabla categoria
-    ```CREATE TABLE IF NOT EXISTS `finaldb`.`categoria` (`cate_id`
+    ``` sql
+   CREATE TABLE IF NOT EXISTS `finaldb`.`categoria` (`cate_id`
         INT NOT NULL AUTO_INCREMENT,
         `categoria`
         VARCHAR(255) NOT NULL,
