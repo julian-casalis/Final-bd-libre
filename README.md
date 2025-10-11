@@ -1,4 +1,4 @@
-<img width="788" height="548" alt="image" src="https://github.com/user-attachments/assets/0397cf47-8093-4a95-a149-9eb06e58f517" /># Base de datos Libre de Ventas de amazon
+# Base de datos Libre de Ventas de amazon
 
 ## Descripción
 Este proyecto se realizó con la intención de aprender normalizacion de datos en formato .csv para luego cargarlos en un motor de base de datos, en este caso MySQL y modificarlos en base a nuestra necesidad.
@@ -26,7 +26,7 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
     ```CREATE TABLE IF NOT EXISTS `finaldb`.`categoria` (
   `cate_id` INT NOT NULL AUTO_INCREMENT,
   `categoria` VARCHAR(255) NOT NULL,
-  PRIMARY KEY (`cate_id`));
+  PRIMARY KEY (`cate_id`)); ```
 
   ° Tabla subcategiria
   ```CREATE TABLE IF NOT EXISTS `finaldb`.`subcategoria` (
