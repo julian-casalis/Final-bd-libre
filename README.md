@@ -18,11 +18,12 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
    <img width="788" height="548" alt="image" src="https://github.com/user-attachments/assets/505f6bf8-61a4-4917-907a-c56055a05238" />
 
 3. Creacion de la base de datos con la siguiente consulta
-   ```CREATE DATABASE finaldb;
+   ```sql
+   CREATE DATABASE finaldb;
 
 4. Luego la creacion de las tablas, la cual tiene datos del tipo integer y varchar, con las claves primarias y foraneas.
 
-   ° Tabla categoria
+   ##Tabla categoria
     ```sql
    CREATE TABLE IF NOT EXISTS `finaldb`.`categoria` (`cate_id`
         INT NOT NULL AUTO_INCREMENT,
@@ -30,7 +31,7 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
         VARCHAR(255) NOT NULL,
         PRIMARY KEY (`cate_id`));
 
-  ° Tabla subcategiria
+  ##Tabla subcategiria
   ```sql 
   CREATE TABLE IF NOT EXISTS `finaldb`.`subcategoria` (
     `subc_id` INT NOT NULL AUTO_INCREMENT,
