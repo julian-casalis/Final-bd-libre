@@ -23,17 +23,17 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
 
 4. Luego la creacion de las tablas, la cual tiene datos del tipo integer y varchar, con las claves primarias y foraneas.
 
-   ##Tabla categoria
+°Tabla categoria
     ```sql
    CREATE TABLE IF NOT EXISTS `finaldb`.`categoria` (`cate_id`
-        INT NOT NULL AUTO_INCREMENT,
-        `categoria`
-        VARCHAR(255) NOT NULL,
-        PRIMARY KEY (`cate_id`));
-
-  ##Tabla subcategiria
+      INT NOT NULL AUTO_INCREMENT,
+      `categoria`
+      VARCHAR(255) NOT NULL,
+      PRIMARY KEY (`cate_id`));
+        
+°Tabla subcategiria
   ```sql 
-  CREATE TABLE IF NOT EXISTS `finaldb`.`subcategoria` (
+   CREATE TABLE IF NOT EXISTS `finaldb`.`subcategoria` (
     `subc_id` INT NOT NULL AUTO_INCREMENT,
     `subc_nom` VARCHAR(255) NOT NULL,
     `subc_cate` INT NOT NULL,
@@ -43,34 +43,10 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
         FOREIGN KEY (`subc_cate`) 
         REFERENCES `finaldb`.`categoria` (`cate_id`) 
         ON DELETE NO ACTION 
-        ON UPDATE NO ACTION
-);
+        ON UPDATE NO ACTION);
 
-   °Tabla region_mercado
-    ```sql
-CREATE TABLE IF NOT EXISTS `finaldb`.`region_mercado` (
-  `regi_id` INT NOT NULL AUTO_INCREMENT,
-  `regi_nom` VARCHAR(255) NOT NULL,
-  `mer_nom` VARCHAR(45) NOT NULL,
-  `mer_nomd` VARCHAR(45) NOT NULL,
-  PRIMARY KEY (`regi_id`));
 
-   °Tabla grografia 
-   ```CREATE TABLE IF NOT EXISTS `finaldb`.`geografia` (
-  `geo_id` INT NOT NULL AUTO_INCREMENT,
-  `pais` VARCHAR(255) NOT NULL,
-  `estado` VARCHAR(45) NOT NULL,
-  `ciudad` VARCHAR(45) NOT NULL,
-  `geo_regi` INT NOT NULL,
-  PRIMARY KEY (`geo_id`),
-  INDEX `regi_id_fk` (`geo_regi` ASC),
-  CONSTRAINT fk_geo_regi
-    FOREIGN KEY (`geo_regi`)
-    REFERENCES `finaldb`.`region y mercado` (`regi_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
 
-   ° Tabla clientes
    
 
    
