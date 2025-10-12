@@ -23,7 +23,7 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
 4. Luego la creacion de las tablas, la cual tiene datos del tipo integer y varchar, con las claves primarias y foraneas.
 
    ° Tabla categoria
-    ``` sql
+    ```sql
    CREATE TABLE IF NOT EXISTS `finaldb`.`categoria` (`cate_id`
         INT NOT NULL AUTO_INCREMENT,
         `categoria`
@@ -31,7 +31,8 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
         PRIMARY KEY (`cate_id`));
 
   ° Tabla subcategiria
-  ```CREATE TABLE IF NOT EXISTS `finaldb`.`subcategoria` (
+  ```sql 
+  CREATE TABLE IF NOT EXISTS `finaldb`.`subcategoria` (
     `subc_id` INT NOT NULL AUTO_INCREMENT,
     `subc_nom` VARCHAR(255) NOT NULL,
     `subc_cate` INT NOT NULL,
@@ -45,7 +46,8 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
 );
 
    °Tabla region_mercado
-    ```CREATE TABLE IF NOT EXISTS `finaldb`.`region_mercado` (
+    ```sql
+CREATE TABLE IF NOT EXISTS `finaldb`.`region_mercado` (
   `regi_id` INT NOT NULL AUTO_INCREMENT,
   `regi_nom` VARCHAR(255) NOT NULL,
   `mer_nom` VARCHAR(45) NOT NULL,
