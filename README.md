@@ -124,47 +124,53 @@ CREATE TABLE IF NOT EXISTS `mydb`.`productos` (
 - Tabla ventas
 
 ```sql
-CREATE TABLE IF NOT EXISTS `mydb`.`ventas` (
-  `vent_id` INT NOT NULL,
-  `vent_ped_id` VARCHAR(255) NOT NULL,
-  `vent_clie` INT NOT NULL,
-  `vent_prod` INT NOT NULL,
-  `vent_geo` INT NOT NULL,
-  `vent_fech` INT NOT NULL,
-  `vent_pedi` VARCHAR(45) NOT NULL,
-  `vent_fech_envi` VARCHAR(45) NOT NULL,
-  `vent_mod_env` VARCHAR(45) NOT NULL,
-  `vent_priori` VARCHAR(45) NOT NULL,
-  `ventas` DECIMAL(10,2) NOT NULL,
-  `vent_cant` INT NOT NULL,
-  `vent_desc` DECIMAL(5,2) NOT NULL,
-  `vent_bene` DECIMAL(10,2) NOT NULL,
-  `vent_cost_envi` DECIMAL(10,2) NOT NULL,
-  PRIMARY KEY (`vent_id`),
-  INDEX `clie_id_idx` (`vent_clie` ASC) VISIBLE,
-  INDEX `prod_id_idx` (`vent_prod` ASC) VISIBLE,
-  INDEX `geo_id_idx` (`vent_geo` ASC) VISIBLE,
-  INDEX `fech_id_idx` (`vent_fech` ASC) VISIBLE,
-  CONSTRAINT `vent_clie`
-    FOREIGN KEY (`vent_clie`)
-    REFERENCES `mydb`.`clientes` (`clie_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `vent_prod`
-    FOREIGN KEY (`vent_prod`)
-    REFERENCES `mydb`.`productos` (`prod_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `vent_geo`
-    FOREIGN KEY (`vent_geo`)
-    REFERENCES `mydb`.`geografia` (`geo_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `vent_fech`
-    FOREIGN KEY (`vent_fech`)
-    REFERENCES `mydb`.`fecha de pedido` (`fech_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
+  DROP TEMPORARY TABLE IF EXISTS tmp_ventas_clie;
+  CREATE TEMPORARY TABLE tmp_ventas_clie AS
+  SELECT
+      t.Order_ID,
+      c.clie_id,
+      t.Product_ID,
+      t.City, t.State, t.Country,
+      t.Order_Date,
+      t.Order_Priority, t.Ship_Date, t.Ship_Mode,
+      t.Sales, t.Quantity, t.Discount, t.Profit, t.Shipping_Cost
+  FROM temp_full t
+  JOIN clientes c ON c.clie_cod = t.Customer_ID
+  LIMIT 1000 OFFSET 51000;
+
+  -- se utiliza LIMIT ya que la base de datos contiene muchas finalas
+  --  unir productos
+  DROP TEMPORARY TABLE IF EXISTS tmp_ventas_prod;
+  CREATE TEMPORARY TABLE tmp_ventas_prod AS
+  SELECT v.*, p.prod_id
+  FROM tmp_ventas_clie v
+  JOIN productos p ON p.prod_cod = v.Product_ID;
+
+  -- unir geografía
+  DROP TEMPORARY TABLE IF EXISTS tmp_ventas_geo;
+  CREATE TEMPORARY TABLE tmp_ventas_geo AS
+  SELECT v.*, g.geo_id
+  FROM tmp_ventas_prod v
+  JOIN geografia g ON g.ciudad = v.City AND g.estado = v.State AND g.pais = v.Country;
+
+  --  unir fecha
+  DROP TEMPORARY TABLE IF EXISTS tmp_ventas_final;
+  CREATE TEMPORARY TABLE tmp_ventas_final AS
+  SELECT v.*, f.fech_id
+  FROM tmp_ventas_geo v
+  JOIN fecha_pedido f ON f.fech_com = v.Order_Date;
+
+  -- Finalmente insertar
+  INSERT INTO ventas (
+      vent_ped_id, vent_clie, vent_prod, vent_geo, vent_fech,
+      vent_priori, vent_fech_envi, vent_mod_env,
+      vent_ventas, vent_cant, vent_desc, vent_bene, vent_cost_envi
+  )
+  SELECT
+      Order_ID, clie_id, prod_id, geo_id, fech_id,
+      Order_Priority, Ship_Date, Ship_Mode,
+      Sales, Quantity, Discount, Profit, Shipping_Cost
+  FROM tmp_ventas_final;
 ```
 
 5. A partir de ahí comenzamos cargando los datos a la base con el siguiente comando:
@@ -178,26 +184,26 @@ LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;
 ```
 
-
 5. Una vez con la tablas ya creadas podremos empezar la carga de los datos:
 
 - En esta etapa se procedió a importar los registros del archivo CSV a la base de datos MySQL.
-Para ello se utilizó la instrucción:
+  Para ello se utilizó la instrucción:
 
   ```sql
     LOAD DATA local INFILE 'C:/xampp/htdocs/finalbd/super/data.csv'
     INTO TABLE temp_full
-    FIELDS TERMINATED BY ',' 
-    ENCLOSED BY '"' 
+    FIELDS TERMINATED BY ','
+    ENCLOSED BY '"'
     LINES TERMINATED BY '\n'
     IGNORE 1 ROWS;
   ```
+
 6. Inserción de datos normalizados.
 
-  - Una vez cargados los registros en la tabla temporal temp_full, se procedió a distribuir la información en las distintas tablas del modelo normalizado, de acuerdo con el diagrama Entidad–Relación.
-    Para esto, se ejecutaron las siguientes consultas SQL que permiten poblar cada tabla con los datos correspondientes, evitando duplicados mediante el uso de DISTINCT y aplicando las relaciones entre entidades mediante claves foráneas.
+- Una vez cargados los registros en la tabla temporal temp_full, se procedió a distribuir la información en las distintas tablas del modelo normalizado, de acuerdo con el diagrama Entidad–Relación.
+  Para esto, se ejecutaron las siguientes consultas SQL que permiten poblar cada tabla con los datos correspondientes, evitando duplicados mediante el uso de DISTINCT y aplicando las relaciones entre entidades mediante claves foráneas.
 
-  - Tabla region_mercado
+- Tabla region_mercado
 
 ```sql
   INSERT INTO region_y_mercado (regi_nom, mer_nom, mer_nomd)
@@ -205,91 +211,86 @@ Para ello se utilizó la instrucción:
   FROM temp_full;
 ```
 
-  - Tabla geografia 
+- Tabla geografia
 
-  ```sql
-    INSERT INTO geografia (pais, estado, ciudad, geo_regi)
-    SELECT DISTINCT Country, State, City, rm.regi_id
-    FROM temp_full t
-    JOIN region_mercado rm ON rm.regi_nom = t.Region;
-  ```
-
-  - Tabla categoria
-
-  ```sql
-    INSERT INTO categoria (categoria)
-    SELECT DISTINCT Category FROM temp_full;
-  ```
-
-  - Tabla subcategoria
-
-  ```sql
-    INSERT INTO subcategoria (subc_nom, subc_cate)
-    SELECT DISTINCT t.Sub_Category, c.cate_id
-    FROM temp_full t
-    JOIN categoria c ON c.categoria = t.Category;
-  ```
-
-  - Tabla producto
-
-  ```sql
-    INSERT INTO productos (prod_cod, prod_nom, prod_subc)
-    SELECT DISTINCT t.Product_ID, t.Product_Name, s.subc_id
-    FROM temp_full t
-    JOIN subcategoria s ON s.subc_nom = t.Sub_Category;
-  ```
-
-  -Tabla clientes
-
-  ```sql
-    INSERT INTO clientes (clie_cod, clie_nom, clie_seg)
-    SELECT DISTINCT t.Customer_ID, t.Customer_Name, rm.regi_id
-    FROM temp_full t
-    JOIN region_mercado rm ON rm.regi_nom = t.Region;
-  ```
-
-  - Tabla fecha_pedido
-
-  ```sql
-    INSERT INTO fecha_pedido (fech_com, fech_ani, fech_sem)
-    SELECT DISTINCT 
-      STR_TO_DATE(LEFT(t.Order_Date, 19), '%Y-%m-%d %H:%i:%s'),
-      t.Year,
-      t.weeknum
-    FROM temp_full t;
-  ```
-
-  - Tabla ventas
-
-  ```sql
-    INSERT INTO ventas (
-  vent_ped_id, vent_clie, vent_prod, vent_geo,vent_fech,
-  vent_priori, vent_fech_envi, vent_mod_env,
-  vent_ventas, vent_cant, vent_desc, vent_bene, vent_cost_envi
-  )
-  SELECT 
-    t.Order_ID,
-    c.clie_id,
-    p.prod_id,
-    g.geo_id,
-    f.fech_id,
-    t.Order_Priority,
-    t.Ship_Date,
-    t.Ship_Mode,
-    t.Sales,
-    t.Quantity,
-    t.Discount,
-    t.Profit,
-    t.Shipping_Cost
+```sql
+  INSERT INTO geografia (pais, estado, ciudad, geo_regi)
+  SELECT DISTINCT Country, State, City, rm.regi_id
   FROM temp_full t
-  JOIN clientes c ON c.clie_cod = t.Customer_ID
-  JOIN productos p ON p.prod_cod = t.Product_ID
-  JOIN geografia g ON g.ciudad = t.City AND g.estado = t.State AND g.pais = t.Country
-  JOIN fecha_pedido f ON f.fech_com = STR_TO_DATE(LEFT(t.Order_Date, 19), '%Y-%m-%d %H:%i:%s');
+  JOIN region_mercado rm ON rm.regi_nom = t.Region;
+```
 
-  ```
+- Tabla categoria
 
-  
+```sql
+  INSERT INTO categoria (categoria)
+  SELECT DISTINCT Category FROM temp_full;
+```
 
+- Tabla subcategoria
 
-    
+```sql
+  INSERT INTO subcategoria (subc_nom, subc_cate)
+  SELECT DISTINCT t.Sub_Category, c.cate_id
+  FROM temp_full t
+  JOIN categoria c ON c.categoria = t.Category;
+```
+
+- Tabla producto
+
+```sql
+  INSERT INTO productos (prod_cod, prod_nom, prod_subc)
+  SELECT DISTINCT t.Product_ID, t.Product_Name, s.subc_id
+  FROM temp_full t
+  JOIN subcategoria s ON s.subc_nom = t.Sub_Category;
+```
+
+-Tabla clientes
+
+```sql
+  INSERT INTO clientes (clie_cod, clie_nom, clie_seg)
+  SELECT DISTINCT t.Customer_ID, t.Customer_Name, rm.regi_id
+  FROM temp_full t
+  JOIN region_mercado rm ON rm.regi_nom = t.Region;
+```
+
+- Tabla fecha_pedido
+
+```sql
+  INSERT INTO fecha_pedido (fech_com, fech_ani, fech_sem)
+  SELECT DISTINCT
+    STR_TO_DATE(LEFT(t.Order_Date, 19), '%Y-%m-%d %H:%i:%s'),
+    t.Year,
+    t.weeknum
+  FROM temp_full t;
+```
+
+- Tabla ventas
+
+```sql
+  INSERT INTO ventas (
+vent_ped_id, vent_clie, vent_prod, vent_geo,vent_fech,
+vent_priori, vent_fech_envi, vent_mod_env,
+vent_ventas, vent_cant, vent_desc, vent_bene, vent_cost_envi
+)
+SELECT
+  t.Order_ID,
+  c.clie_id,
+  p.prod_id,
+  g.geo_id,
+  f.fech_id,
+  t.Order_Priority,
+  t.Ship_Date,
+  t.Ship_Mode,
+  t.Sales,
+  t.Quantity,
+  t.Discount,
+  t.Profit,
+  t.Shipping_Cost
+FROM temp_full t
+JOIN clientes c ON c.clie_cod = t.Customer_ID
+JOIN productos p ON p.prod_cod = t.Product_ID
+JOIN geografia g ON g.ciudad = t.City AND g.estado = t.State AND g.pais = t.Country
+JOIN fecha_pedido f ON f.fech_com = STR_TO_DATE(LEFT(t.Order_Date, 19), '%Y-%m-%d %H:%i:%s');
+
+```
