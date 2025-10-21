@@ -56,7 +56,7 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
 - Tabla region_mercado
 
 ```sql
-  CREATE TABLE IF NOT EXISTS `mydb`.`region_mercado` (
+  CREATE TABLE IF NOT EXISTS `finaldb`.`region_mercado` (
   `regi_id` INT NOT NULL AUTO_INCREMENT,
   `regi_nom` VARCHAR(255) NOT NULL,
   `mer_nom` VARCHAR(45) NOT NULL,
@@ -67,7 +67,7 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
 - Tabla grografia
 
 ```sql
-  CREATE TABLE IF NOT EXISTS `mydb`.`geografia` (
+  CREATE TABLE IF NOT EXISTS `finaldb`.`geografia` (
   `geo_id` INT NOT NULL AUTO_INCREMENT,
   `pais` VARCHAR(255) NOT NULL,
   `estado` VARCHAR(45) NOT NULL,
@@ -77,7 +77,7 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
   INDEX `regi_id_idx` (`geo_regi` ASC) VISIBLE,
   CONSTRAINT `geo_regi`
     FOREIGN KEY (`geo_regi`)
-    REFERENCES `mydb`.`region y mercado` (`regi_id`)
+    REFERENCES `finaldb`.`region y mercado` (`regi_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
 ```
@@ -85,7 +85,7 @@ https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
 - Tabla clientes
 
 ```sql
-CREATE TABLE IF NOT EXISTS `mydb`.`clientes` (
+CREATE TABLE IF NOT EXISTS `finaldb`.`clientes` (
  `clie_id` INT NOT NULL AUTO_INCREMENT,
  `clie_cod` VARCHAR(255) NOT NULL,
  `clie_nom` VARCHAR(45) NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`clientes` (
 - Tabla fecha_pedido
 
 ```sql
-CREATE TABLE IF NOT EXISTS `mydb`.`fecha de pedido` (
+CREATE TABLE IF NOT EXISTS `finaldb`.`fecha de pedido` (
   `fech_id` INT NOT NULL AUTO_INCREMENT,
   `fech_com` DATE NOT NULL,
   `fech_ani` INT NULL,
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`fecha de pedido` (
 - Tabla productos
 
 ```sql
-CREATE TABLE IF NOT EXISTS `mydb`.`productos` (
+CREATE TABLE IF NOT EXISTS `finaldb`.`productos` (
   `prod_id` INT NOT NULL AUTO_INCREMENT,
   `prod_cod` VARCHAR(255) NOT NULL,
   `prod_subc` INT NOT NULL,
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`productos` (
   INDEX `subc_id_idx` (`prod_subc` ASC) VISIBLE,
   CONSTRAINT `produ_subc`
     FOREIGN KEY (`prod_subc`)
-    REFERENCES `mydb`.`subcategoria` (`subc_id`)
+    REFERENCES `finaldb`.`subcategoria` (`subc_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
 ```
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`productos` (
 - Tabla ventas
 
 ```sql
- CREATE TABLE IF NOT EXISTS `mydb`.`ventas` (
+ CREATE TABLE IF NOT EXISTS `finaldb`.`ventas` (
   `vent_id` INT NOT NULL,
   `vent_ped_id` VARCHAR(255) NOT NULL,
   `vent_clie` INT NOT NULL,
@@ -147,22 +147,22 @@ CREATE TABLE IF NOT EXISTS `mydb`.`productos` (
   INDEX `fech_id_idx` (`vent_fech` ASC) VISIBLE,
   CONSTRAINT `vent_clie`
     FOREIGN KEY (`vent_clie`)
-    REFERENCES `mydb`.`clientes` (`clie_id`)
+    REFERENCES `finaldb`.`clientes` (`clie_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `vent_prod`
     FOREIGN KEY (`vent_prod`)
-    REFERENCES `mydb`.`productos` (`prod_id`)
+    REFERENCES `finaldb`.`productos` (`prod_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `vent_geo`
     FOREIGN KEY (`vent_geo`)
-    REFERENCES `mydb`.`geografia` (`geo_id`)
+    REFERENCES `finaldb`.`geografia` (`geo_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `vent_fech`
     FOREIGN KEY (`vent_fech`)
-    REFERENCES `mydb`.`fecha de pedido` (`fech_id`)
+    REFERENCES `finaldb`.`fecha de pedido` (`fech_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
 
