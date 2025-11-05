@@ -2,7 +2,7 @@
 
 ## Descripción
 
-Este proyecto fue realizado con el objetivo de aprender el proceso de normalización de datos a partir de archivos en formato .csv, para luego cargarlos en un motor de base de datos —en este caso, MySQL— y modificarlos según nuestras necesidades.
+Este proyecto fue realizado con el objetivo de aprender el proceso de normalización de datos a partir de archivos en formato .csv, para luego cargarlos en un motor de base de datos, en este caso MySql, y modificarlos según nuestras necesidades.
 
 Con este propósito, elegimos un dataset que contiene información sobre Global Superstore.
 
