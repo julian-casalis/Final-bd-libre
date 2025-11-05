@@ -9,7 +9,7 @@ Con este propósito, elegimos un dataset que contiene información sobre Global 
 El dataset mencionado puede encontrarse en el siguiente enlace.
 https://www.kaggle.com/datasets/fatihilhan/global-superstore-dataset/data
 
-## Ecplicación de la Normalización Realizada
+## Explicación de la Normalización Realizada
 
 1. Primero se descargó el archivo .csv y se verificó que los datos estuvieran organizados correctamente, además de identificar el tipo de separador utilizado, con el fin de comenzar a planificar la estructura y las tablas de la base de datos.
 
