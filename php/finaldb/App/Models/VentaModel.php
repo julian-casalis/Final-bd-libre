@@ -6,13 +6,38 @@ class VentaModel extends Model
     protected $table = 'ventas';
     const RECORDS_PER_PAGE = 20;
 
+    // configuracion de filtros
+    private const FILTROS_CONFIG = [
+        'subcategoria' => ['campo' => 's.subc_id', 'tipo' => 'exacto'],
+        'categoria' => ['campo' => 'ca.cate_id', 'tipo' => 'exacto'],
+        'region' => ['campo' => 'rm.regi_nom', 'tipo' => 'exacto'],
+        'mercado' => ['campo' => 'rm.mer_nom', 'tipo' => 'exacto'],
+        'ciudad' => ['campo' => 'g.ciudad', 'tipo' => 'exacto'],
+        'modo_envio' => ['campo' => 'v.vent_mod_env', 'tipo' => 'exacto'],
+        'priori' => ['campo' => 'v.vent_priori', 'tipo' => 'exacto'],
+        'fecha_desde' => ['campo' => 'f.fech_com', 'tipo' => 'mayor_igual'],
+        'fecha_hasta' => ['campo' => 'f.fech_com', 'tipo' => 'menor_igual'],
+    ];
+
+    // configuracion de ordenamiento
+    private const ORDER_COLUMNS = [
+        'codigo' => 'v.vent_ped_id',
+        'fecha' => 'f.fech_com',
+        'cliente' => 'c.clie_nom',
+        'producto' => 'p.prod_nom',
+        'prioridad' => 'v.vent_priori',
+        'ventas' => 'v.vent_ventas',
+        'cantidad' => 'v.vent_cant',
+        'beneficio' => 'v.vent_bene',
+        'envio' => 'v.vent_cost_envi'
+    ];
+
     public function getPaginated($page = 1)
     {
         $offset = ($page - 1) * self::RECORDS_PER_PAGE;
         $limit = self::RECORDS_PER_PAGE;
 
-        $sql = "SELECT 
-            -- v.vent_id,
+        $sql = "SELECT DISTINCT 
             v.vent_ped_id,
             c.clie_nom AS cliente,
             p.prod_nom AS producto,
@@ -47,9 +72,65 @@ class VentaModel extends Model
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getTotalRecords()
+   
+    public function getTotalRecords($filters = [])
     {
-        $stmt = $this->db->query("SELECT COUNT(*) FROM {$this->table}");
+        $sql = "SELECT COUNT(DISTINCT v.vent_id) 
+                FROM ventas v
+                JOIN clientes c ON v.vent_clie = c.clie_id
+                JOIN productos p ON v.vent_prod = p.prod_id
+                JOIN subcategoria s ON p.prod_subc = s.subc_id
+                JOIN categoria ca ON s.subc_cate = ca.cate_id
+                JOIN geografia g ON v.vent_geo = g.geo_id
+                JOIN region_mercado rm ON g.geo_regi = rm.regi_id
+                JOIN fecha_pedido f ON v.vent_fech = f.fech_id
+                WHERE 1=1";
+        
+        $params = [];
+        
+        // aplicar los mismos filtros 
+        foreach (self::FILTROS_CONFIG as $filtro => $config) {
+            if (!empty($filters[$filtro])) {
+                $paramName = ":{$filtro}";
+                
+                switch ($config['tipo']) {
+                    case 'exacto':
+                        $sql .= " AND {$config['campo']} = {$paramName}";
+                        $params[$paramName] = $filters[$filtro];
+                        break;
+                    case 'mayor_igual':
+                        $sql .= " AND {$config['campo']} >= {$paramName}";
+                        $params[$paramName] = $filters[$filtro];
+                        break;
+                    case 'menor_igual':
+                        $sql .= " AND {$config['campo']} <= {$paramName}";
+                        $params[$paramName] = $filters[$filtro];
+                        break;
+                }
+            }
+        }
+
+        // busqueda general
+        if (!empty($filters['buscar'])) {
+            $sql .= " AND (
+                c.clie_nom LIKE :buscar OR
+                p.prod_nom LIKE :buscar OR
+                s.subc_nom LIKE :buscar OR
+                g.ciudad LIKE :buscar OR
+                ca.categoria LIKE :buscar OR
+                v.vent_mod_env LIKE :buscar OR
+                v.vent_priori LIKE :buscar OR
+                v.vent_ped_id LIKE :buscar
+            )";
+            $params[':buscar'] = '%' . $filters['buscar'] . '%';
+        }
+
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
+        }
+        $stmt->execute();
+
         return (int) $stmt->fetchColumn();
     }
 
@@ -59,13 +140,13 @@ class VentaModel extends Model
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
     public function getFiltered($filters = [], $page = 1)
     {
         $offset = ($page - 1) * self::RECORDS_PER_PAGE;
         $limit = self::RECORDS_PER_PAGE;
 
         $sql = "SELECT DISTINCT
-    -- v.vent_id,
             v.vent_ped_id,
             c.clie_nom AS cliente,
             p.prod_nom AS producto,
@@ -82,77 +163,59 @@ class VentaModel extends Model
             v.vent_cant,
             v.vent_bene,
             v.vent_cost_envi
-            FROM ventas v
-            JOIN clientes c ON v.vent_clie = c.clie_id
-            JOIN productos p ON v.vent_prod = p.prod_id
-            JOIN subcategoria s ON p.prod_subc = s.subc_id
-            JOIN categoria ca ON s.subc_cate = ca.cate_id
-            JOIN geografia g ON v.vent_geo = g.geo_id
-            JOIN region_mercado rm ON g.geo_regi = rm.regi_id
-            JOIN fecha_pedido f ON v.vent_fech  = f.fech_id
-            WHERE 1=1";
+        FROM ventas v
+        JOIN clientes c ON v.vent_clie = c.clie_id
+        JOIN productos p ON v.vent_prod = p.prod_id
+        JOIN subcategoria s ON p.prod_subc = s.subc_id
+        JOIN categoria ca ON s.subc_cate = ca.cate_id
+        JOIN geografia g ON v.vent_geo = g.geo_id
+        JOIN region_mercado rm ON g.geo_regi = rm.regi_id
+        JOIN fecha_pedido f ON v.vent_fech = f.fech_id
+        WHERE 1=1";
 
         $params = [];
 
-        // 🔍 Filtros
-        if (!empty($filters['subcategoria'])) {
-            $sql .= " AND s.subc_id = :subcategoria";
-            $params[':subcategoria'] = $filters['subcategoria'];
-        }
-        if (!empty($filters['region'])) {
-            $sql .= " AND rm.regi_id = :region";
-            $params[':region'] = $filters['region'];
-        }
-        if (!empty($filters['mercado'])) {
-            $sql .= " AND rm.mer_nom = :mercado";
-            $params[':mercado'] = $filters['mercado'];
-        }
-        if (!empty($filters['ciudad'])) {
-            $sql .= " AND g.ciudad = :ciudad";
-            $params[':ciudad'] = $filters['ciudad'];
-        }
-
-        if (!empty($filters['modo_envio'])) {
-            $sql .= " AND v.vent_mod_env = :modo_envio";
-            $params[':modo_envio'] = $filters['modo_envio'];
-        }
-
-        if (!empty($filters['priori'])) {
-            $sql .= " AND v.vent_priori = :priori";
-            $params[':priori'] = $filters['priori'];
+        // sistema de filtros escalable
+        foreach (self::FILTROS_CONFIG as $filtro => $config) {
+            if (!empty($filters[$filtro])) {
+                $paramName = ":{$filtro}";
+                
+                switch ($config['tipo']) {
+                    case 'exacto':
+                        $sql .= " AND {$config['campo']} = {$paramName}";
+                        $params[$paramName] = $filters[$filtro];
+                        break;
+                    case 'mayor_igual':
+                        $sql .= " AND {$config['campo']} >= {$paramName}";
+                        $params[$paramName] = $filters[$filtro];
+                        break;
+                    case 'menor_igual':
+                        $sql .= " AND {$config['campo']} <= {$paramName}";
+                        $params[$paramName] = $filters[$filtro];
+                        break;
+                }
+            }
         }
 
-
+        // busqueda general
         if (!empty($filters['buscar'])) {
             $sql .= " AND (
-            agregar pais estado
-                    subcategoria
-                    
-             LIKE :buscar OR
-            g.ciudad LIKE :buscar OR
-            v.vent_mod_env LIKE :buscar OR
-            v.vent_priori LIKE :buscar
-        )";
+                c.clie_nom LIKE :buscar OR
+                p.prod_nom LIKE :buscar OR
+                s.subc_nom LIKE :buscar OR
+                g.ciudad LIKE :buscar OR
+                ca.categoria LIKE :buscar OR
+                v.vent_mod_env LIKE :buscar OR
+                v.vent_priori LIKE :buscar OR
+                v.vent_ped_id LIKE :buscar
+            )";
             $params[':buscar'] = '%' . $filters['buscar'] . '%';
         }
 
-        // 🧭 ORDENAMIENTO
-        $allowedOrderColumns = [
-            'codigo' => 'v.vent_ped_id',
-            'fecha' => 'f.fech_com',
-            'cliente' => 'c.clie_nom',
-            'producto' => 'p.prod_nom',
-            'prioridad' => 'v.vent_priori',
-            'ventas' => 'v.vent_ventas',
-            'cantidad' => 'v.vent_cant',
-            'beneficio' => 'v.vent_bene',
-            'envio' => 'v.vent_cost_envi'
-        ];
-
-        $orderBy = $allowedOrderColumns[$filters['ordenar_por'] ?? 'id'] ?? 'v.vent_id';
+        // ordenamiento
+        $orderBy = self::ORDER_COLUMNS[$filters['ordenar_por'] ?? 'codigo'] ?? 'v.vent_id';
         $orderDir = strtoupper($filters['direccion'] ?? 'DESC');
 
-        // Evitar inyección
         if (!in_array($orderDir, ['ASC', 'DESC'])) {
             $orderDir = 'DESC';
         }
@@ -185,7 +248,10 @@ class VentaModel extends Model
 
     public function getRegiones()
     {
-        $stmt = $this->db->query("SELECT regi_id, regi_nom FROM region_mercado ORDER BY regi_nom");
+        $stmt = $this->db->query("SELECT MIN(regi_id) AS regi_id, regi_nom
+            FROM region_mercado
+            GROUP BY regi_nom
+            ORDER BY regi_nom");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -216,7 +282,6 @@ class VentaModel extends Model
     public function getReporte($tipo, $filters = [])
     {
         $sql = "";
-        $params = [];
 
         switch ($tipo) {
             case 'promedio_ventas':
@@ -224,7 +289,8 @@ class VentaModel extends Model
                     FROM ventas v
                     JOIN productos p ON v.vent_prod = p.prod_id
                     GROUP BY p.prod_nom
-                    ORDER BY `Promedio Ventas` DESC";
+                    ORDER BY `Promedio Ventas` DESC
+                    LIMIT 20";
                 break;
 
             case 'total_ventas':
@@ -232,7 +298,8 @@ class VentaModel extends Model
                     FROM ventas v
                     JOIN productos p ON v.vent_prod = p.prod_id
                     GROUP BY p.prod_nom
-                    ORDER BY `Cantidad Total` DESC";
+                    ORDER BY `Cantidad Total` DESC
+                    LIMIT 20";
                 break;
 
             case 'total_beneficio':
@@ -240,7 +307,8 @@ class VentaModel extends Model
                     FROM ventas v
                     JOIN productos p ON v.vent_prod = p.prod_id
                     GROUP BY p.prod_nom
-                    ORDER BY `Ventas total` DESC";
+                    ORDER BY `Ventas total` DESC
+                    LIMIT 20";
                 break;
 
             case 'total_envio':
@@ -248,24 +316,9 @@ class VentaModel extends Model
                     FROM ventas v
                     JOIN productos p ON v.vent_prod = p.prod_id
                     GROUP BY p.prod_nom
-                    ORDER BY `Costo Total Envío` DESC";
+                    ORDER BY `Costo Total Envío` DESC
+                    LIMIT 20";
                 break;
-
-            // case 'ventas_maximas':
-            //     $sql = "SELECT p.prod_nom AS Producto, MAX(v.vent_ventas) AS 'Venta Máxima'
-            //         FROM ventas v
-            //         JOIN productos p ON v.vent_prod = p.prod_id
-            //         GROUP BY p.prod_nom
-            //         ORDER BY `Venta Máxima` DESC";
-            //     break;
-
-            // case 'ventas_minimas':
-            //     $sql = "SELECT p.prod_nom AS Producto, MIN(v.vent_ventas) AS 'Venta Mínima'
-            //         FROM ventas v
-            //         JOIN productos p ON v.vent_prod = p.prod_id
-            //         GROUP BY p.prod_nom
-            //         ORDER BY `Venta Mínima` ASC";
-            //     break;
 
             case 'ventas_prioridad':
                 $sql = "SELECT v.vent_priori AS Prioridad, COUNT(*) AS 'Cantidad Ventas', SUM(v.vent_ventas) AS 'Total Vendido'
@@ -281,28 +334,58 @@ class VentaModel extends Model
                     ORDER BY `Total Vendido` DESC";
                 break;
 
+            //  REPORTES
+            case 'ventas_categoria':
+                $sql = "SELECT ca.categoria AS Categoría,
+                           COUNT(*) AS 'Cantidad Ventas',
+                           SUM(v.vent_ventas) AS 'Total Vendido',
+                           SUM(v.vent_bene) AS 'Beneficio Total'
+                    FROM ventas v
+                    JOIN productos p ON v.vent_prod = p.prod_id
+                    JOIN subcategoria s ON p.prod_subc = s.subc_id
+                    JOIN categoria ca ON s.subc_cate = ca.cate_id
+                    GROUP BY ca.categoria
+                    ORDER BY `Total Vendido` DESC";
+                break;
+
+            case 'ventas_region':
+                $sql = "SELECT rm.regi_nom AS Región,
+                           COUNT(*) AS 'Cantidad Ventas',
+                           SUM(v.vent_ventas) AS 'Total Vendido'
+                    FROM ventas v
+                    JOIN geografia g ON v.vent_geo = g.geo_id
+                    JOIN region_mercado rm ON g.geo_regi = rm.regi_id
+                    GROUP BY rm.regi_nom
+                    ORDER BY `Total Vendido` DESC";
+                break;
+
+            case 'top_clientes':
+                $sql = "SELECT c.clie_nom AS Cliente,
+                           COUNT(*) AS 'Total Órdenes',
+                           SUM(v.vent_ventas) AS 'Total Gastado'
+                    FROM ventas v
+                    JOIN clientes c ON v.vent_clie = c.clie_id
+                    GROUP BY c.clie_nom
+                    ORDER BY `Total Gastado` DESC
+                    LIMIT 10";
+                break;
+
+            case 'top_productos':
+                $sql = "SELECT p.prod_nom AS Producto,
+                           SUM(v.vent_cant) AS 'Unidades Vendidas',
+                           SUM(v.vent_ventas) AS 'Ingresos Totales'
+                    FROM ventas v
+                    JOIN productos p ON v.vent_prod = p.prod_id
+                    GROUP BY p.prod_nom
+                    ORDER BY `Unidades Vendidas` DESC
+                    LIMIT 10";
+                break;
+
             default:
                 return [];
         }
 
         $stmt = $this->db->prepare($sql);
-        foreach ($params as $key => $val) {
-            $stmt->bindValue($key, $val);
-        }
-        $stmt->execute();
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if ($orden) {
-            $col = $orden['col'];
-            $dir = strtoupper($orden['dir']) === 'ASC' ? 'ASC' : 'DESC';
-            $sql .= " ORDER BY `$col` $dir";
-        }
-
-        $stmt = $this->db->prepare($sql);
-        foreach ($params as $key => $val) {
-            $stmt->bindValue($key, $val);
-        }
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

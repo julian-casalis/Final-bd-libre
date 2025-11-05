@@ -10,8 +10,6 @@ class VentaController extends Controller
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-
-        // Cargar el modelo de ventas
         $this->ventaModel = $this->model('VentaModel');
     }
 
@@ -20,6 +18,7 @@ class VentaController extends Controller
         $currentPage = (int) ($_GET['page'] ?? 1);
         if ($currentPage < 1) $currentPage = 1;
 
+        // Sistema de filtros escalable 
         $filters = [
             'categoria' => $_GET['categoria'] ?? '',
             'subcategoria' => $_GET['subcategoria'] ?? '',
@@ -28,23 +27,30 @@ class VentaController extends Controller
             'ciudad' => $_GET['ciudad'] ?? '',
             'modo_envio' => $_GET['modo_envio'] ?? '',
             'priori' => $_GET['priori'] ?? '',
-            'ordenar_por' => $_GET['ordenar_por'] ?? 'id',
-            'direccion' => $_GET['direccion'] ?? 'DESC'
+            'fecha_desde' => $_GET['fecha_desde'] ?? '',
+            'fecha_hasta' => $_GET['fecha_hasta'] ?? '',
+            'ordenar_por' => $_GET['ordenar_por'] ?? 'codigo',
+            'direccion' => $_GET['direccion'] ?? 'DESC',
+            'buscar' => trim($_GET['buscar'] ?? '')
         ];
+
+        // Reportes disponibles 
         $reportes = [
             'promedio_ventas' => 'Promedio vendido por producto',
             'total_ventas' => 'Cantidad total de ventas',
             'total_beneficio' => 'Total $$ ventas',
             'total_envio' => 'Costo total de envío',
-            // 'ventas_maximas' => 'Venta máxima por producto',
-            // 'ventas_minimas' => 'Venta mínima por producto',
             'ventas_prioridad' => 'Ventas por prioridad',
-            'ventas_envio' => 'Ventas por modo de envío'
+            'ventas_envio' => 'Ventas por modo de envío',
+            'ventas_categoria' => 'Ventas por categoría',
+            'ventas_region' => 'Ventas por región',
+            'top_clientes' => 'Top 10 clientes',
+            'top_productos' => 'Top 10 productos más vendidos'
         ];
 
         $filtroReporte = $_GET['reporte'] ?? '';
 
-
+        // Obtener datos
         $ventas = $this->ventaModel->getFiltered($filters, $currentPage);
         $categorias = $this->ventaModel->getCategorias();
         $subcategorias = $this->ventaModel->getSubcategorias();
@@ -53,13 +59,13 @@ class VentaController extends Controller
         $ciudades = $this->ventaModel->getCiudades();
         $modos_envio = $this->ventaModel->getModosEnvio();
         $priori = $this->ventaModel->getPriori();
-        $totalRecords = $this->ventaModel->getTotalRecords();
+        
+        $totalRecords = $this->ventaModel->getTotalRecords($filters);
         $recordsPerPage = VentaModel::RECORDS_PER_PAGE;
         $totalPages = (int) ceil($totalRecords / $recordsPerPage);
 
-        $filtroReporte = $_GET['reporte'] ?? '';
+        // Reporte
         $datosReporte = [];
-
         if ($filtroReporte) {
             $datosReporte = $this->ventaModel->getReporte($filtroReporte, $filters);
         }
@@ -81,7 +87,6 @@ class VentaController extends Controller
             'datosReporte' => $datosReporte
         ]);
     }
-
 
     public function viewVenta()
     {

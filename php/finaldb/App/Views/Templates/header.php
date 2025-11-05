@@ -12,35 +12,8 @@
 
 <body class="bg-dark text-light">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
-            <a class="navbar-brand" href="#">mi sistema</a>
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                    <a class="nav-link" href="index.php?controller=ClienteController&action=index">Clientes</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php?controller=ProductoController&action=index">Productos</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php?controller=CategoriaController&action=index">Categorías</a>
-                </li>
-                <!-- <li class="nav-item">
-                    <a class="nav-link" href="#">SubCategorias</a>
-                </li> -->
-                <li class="nav-item">
-                    <a class="nav-link" href="http://localhost/finaldb/">Ventas</a>
-                </li>
-                <!-- <li class="nav-item">
-                    <a class="nav-link" href="#">Fecha de Pedidos</a>
-                </li> -->
-                <!-- <li class="nav-item">
-                    <a class="nav-link" href="#">Geografia</a>
-                </li> -->
-                <!-- <li class="nav-item">
-                    <a class="nav-link" href="#">Region del Mercado</a>
-                </li> -->
-
-            </ul>
-        </div>
-    </nav>
+<div class="bg-dark header-panel">
+    <div class="container-fluid">
+        <h1><i class="bi bi-graph-up-arrow me-3"></i>Tabla de Ventas</h1>
+    </div>
+</div>  
